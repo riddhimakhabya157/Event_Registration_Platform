@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Event {
+  id            String         @id @default(cuid())
+  title         String
+  slug          String         @unique
+  description   String
+  scheduledAt   DateTime
+  venue         String
+  capacity      Int
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  registrations Registration[]
+
+  @@map("events")
+}
+
+model Registration {
+  id                    String                 @id @default(cuid())
+  eventId               String
+  event                 Event                  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  fullName              String
+  email                 String
+  emailNormalized       String
+  collegeOrOrganization String
+  status                String                 @default("CONFIRMED")
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  interests             RegistrationInterest[]
+
+  @@unique([eventId, emailNormalized], name: "eventId_emailNormalized")
+  @@index([eventId])
+  @@index([emailNormalized])
+  @@map("registrations")
+}
+
+model DomainInterest {
+  id            String                 @id @default(cuid())
+  name          String                 @unique
+  registrations RegistrationInterest[]
+
+  @@map("domain_interests")
+}
+
+model RegistrationInterest {
+  id               String         @id @default(cuid())
+  registrationId   String
+  registration     Registration   @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  domainInterestId String
+  domainInterest   DomainInterest @relation(fields: [domainInterestId], references: [id], onDelete: Cascade)
+
+  @@unique([registrationId, domainInterestId], name: "registrationId_domainInterestId")
+  @@index([registrationId])
+  @@index([domainInterestId])
+  @@map("registration_interests")
+}
